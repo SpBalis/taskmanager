@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: taskmanager-config
+data:
+  SPRING_DATASOURCE_URL: jdbc:postgresql://taskdb:5432/taskdb
+  SPRING_DATASOURCE_USERNAME: postgres
