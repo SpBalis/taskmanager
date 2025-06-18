@@ -1,0 +1,25 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/taskdb
+    username: postgres
+    password: postgres
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+  # Actuator
+  application:
+    name: taskmanager
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info
+  endpoint:
+    health:
+      show-details: always
