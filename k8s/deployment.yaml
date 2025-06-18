@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: taskmanager
-          image: taskmanager:latest
+          image: spbalis/taskmanager:latest
           ports:
             - containerPort: 8080
           envFrom:
