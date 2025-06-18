@@ -7,6 +7,7 @@ This project is a minimal yet production-style REST API for task management, bui
 - ☸️ Kubernetes (via Minikube)
 - 🔁 GitOps with ArgoCD
 - 🛢 PostgreSQL (local & in-cluster)
+- ⚙️ GitHub Actions for CI/CD
 
 ---
 
@@ -16,6 +17,7 @@ This project is a minimal yet production-style REST API for task management, bui
 - Dockerizing a Java application using multi-stage builds
 - Deploying it to Kubernetes with health checks and configuration management
 - Setting up GitOps using ArgoCD to automatically sync Kubernetes resources from GitHub
+- Automating Docker builds and GitHub pushes using GitHub Actions
 
 ---
 
@@ -68,13 +70,19 @@ curl http://localhost:8080/tasks
 ### 1. Build Docker image
 
 ```bash
-docker build -t taskmanager:latest .
+docker build -t spbalis/taskmanager:latest .
 ```
 
-### 2. Run locally with Docker
+### 2. Push to Docker Hub
 
 ```bash
-docker run --rm -p 8080:8080 taskmanager:latest
+docker push spbalis/taskmanager:latest
+```
+
+### 3. Run locally with Docker
+
+```bash
+docker run --rm -p 8080:8080 spbalis/taskmanager:latest
 ```
 
 ---
@@ -136,18 +144,57 @@ Open: https://localhost:8081
 Retrieve admin password:
 
 ```bash
-kubectl -n argocd get secret argocd-initial-admin-secret   -o jsonpath="{.data.password}" | base64 -d && echo
+kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d && echo
 ```
 
 ### 3. Deploy ArgoCD Application
-
-The file `applications/taskmanager-app.yaml` defines a GitOps-managed Application pointing to this GitHub repo.
 
 ```bash
 kubectl apply -f applications/taskmanager-app.yaml -n argocd
 ```
 
 ArgoCD will automatically sync everything under `k8s/` into your cluster.
+
+---
+
+## ⚙️ GitHub Actions CI/CD
+
+To automate Docker build and push on git push to `main`, create `.github/workflows/build.yml`:
+
+```yaml
+name: Build and Push Docker Image
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: spbalis/taskmanager:latest
+```
+
+Then add the required secrets (`DOCKER_USERNAME`, `DOCKER_PASSWORD`) to your GitHub repo.
 
 ---
 
@@ -158,6 +205,7 @@ taskmanager/
 ├── src/                         → Java source code
 ├── k8s/                         → Kubernetes manifests
 ├── applications/                → ArgoCD Application definition
+├── .github/workflows/           → GitHub Actions CI/CD pipelines
 ├── Dockerfile                   → Multi-stage Docker build
 ├── docker-compose.yml           → Local PostgreSQL setup
 ├── application.yaml             → Spring Boot config
